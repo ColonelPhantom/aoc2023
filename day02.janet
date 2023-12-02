@@ -27,6 +27,6 @@
 
 (defn main [& args]
   (def input (seq [line :in (file/lines stdin)]
-                  (->> line (peg/match parse-game) (apply get-reqs))))
-  (prin "Part 1: ") (print (sum (seq [game :in input :when (is-valid game)] (game :id))))
+               (->> line (peg/match parse-game) (apply get-reqs))))
+  (prin "Part 1: ") (print (sum (map |($ :id) (filter is-valid input))))
   (prin "Part 2: ") (print (sum (map power input))))
