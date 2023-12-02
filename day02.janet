@@ -4,11 +4,6 @@
     :reveal (/ (some (* :cubes (? ", "))) ,merge) # merge shown cubes
     :main (* "Game " (number :d+) ": " (some (* :reveal (? "; "))))})
 
-(defn filtermap
-  "Like map, but only returns truthy values in the output array"
-  [f ind & inds]
-  (filter truthy? (map f ind ;inds)))
-
 (defn get-reqs
   "Calculate the required cubes of each color in a game"
   [id & reveals]
@@ -16,24 +11,22 @@
   (loop [reveal :in reveals
          color :keys reveal]
     (put reqs color (max (reqs color) (reveal color))))
-  [id reqs])
+  {:id id :reqs reqs})
 
 (defn is-valid
   "Check if requirements are low enough for the game to be valid (part 1)"
-  [id reqs]
+  [{:id id :reqs reqs}]
   (and (<= (reqs :red)   12)
        (<= (reqs :green) 13)
-       (<= (reqs :blue)  14)
-       id))
+       (<= (reqs :blue)  14)))
 
 (defn power
   "Calculate the power of the required cube set (part 2)"
-  [id reqs]
+  [{:id id :reqs reqs}]
   (* (reqs :red) (reqs :green) (reqs :blue)))
 
 (defn main [& args]
-  (def input (->> (file/lines stdin)
-                  (map |(->> $ (peg/match parse-game)
-                               (apply get-reqs)))))
-  (prin "Part 1: ") (print (sum (filtermap |(apply is-valid $) input)))
-  (prin "Part 2: ") (print (sum (map |(apply power $) input))))
+  (def input (seq [line :in (file/lines stdin)]
+                  (->> line (peg/match parse-game) (apply get-reqs))))
+  (prin "Part 1: ") (print (sum (seq [game :in input :when (is-valid game)] (game :id))))
+  (prin "Part 2: ") (print (sum (map power input))))
