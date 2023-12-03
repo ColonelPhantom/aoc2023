@@ -37,11 +37,9 @@
 (defn part-schema
   "Creates a table from coordinates to the number located there"
   [parts]
-  (def schema @{})
-  (seq [part :in parts                              # for every part
-        col :range [(part :column) (part :endcol)]] # and every column it occupies
-    (put schema {:y col :x (part :line)} part))     # add it to the schema
-  schema)
+  (tabseq [part :in parts                              # for every part
+           col :range [(part :column) (part :endcol)]] # and every column it occupies
+    {:y col :x (part :line)} part))                    # associate coord with part
 
 (defn process-gear [{:line line :column column} part-table]
   (def numbers @{}) # use a hashmap for numbers, automatically dedupes on identity
