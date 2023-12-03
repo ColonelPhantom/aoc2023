@@ -1,14 +1,10 @@
 (defn create-part [line column number endcolumn]
   {:line (- line 1)        # subtract 1 because slice is 0-indexed
    :column (- column 1)    # but PEG line and column are 1-indexed
-   :endcol (- endcolumn 1)
-   :number number})
+   :endcol (- endcolumn 1) # position information is captured with (line)/(column)
+   :number number})        # and the actual value is captured with (number :d+)
 (def partnum
-  ~{:number (/ (* (line)       # capture current line
-                  (column)     # and first column
-                  (number :d+) # as well as the number
-                  (column))    # and the column after the number
-               ,create-part)   # then put those in a struct
+  ~{:number (/ (* (line) (column) (number :d+) (column)) ,create-part)
     :main (any (* (any :D) :number))}) # find all numbers
 
 (defn create-gear [line column] {:line (- line 1) :column (- column 1)})
@@ -16,15 +12,11 @@
   ~{:gear (/ (* (line) (column) "*") ,create-gear) # gear = "*", only location is important
     :main (any (* (any (if-not "*" 1)) :gear))})   # find all gears
 
-(defn safe-slice
-  "Performs slicing safely, by clamping indices to valid (positive) ones."
-  "Note that this slice function is inclusive."
-  [x start end]
+(defn safe-slice "Inclusive slice that clamps indices" [x start end]
   (defn clamp [i] (max 0 (min i (length x))))
   (slice x (clamp start) (clamp (+ end 1))))
 
-(defn has-symbol [part schematic]
-  "Checks if the part has a symbol adjacent and is therefore valid"
+(defn has-symbol "Checks if part is next to a symbol" [part schematic]
   (def symb # PEG that matches if there is a symbol anywhere in the input
     ~{:SYMB (+ :d ".")              # anything that's not a digit or . is a symbol
       :symb (if-not :SYMB 1)        # everything else is!
@@ -34,9 +26,7 @@
   (def cols (map |(safe-slice $ (- column 1) endcol) lines)) # only neighboring cols
   (some |(peg/match symb $) cols))  # if any lin+col has a symb return true
 
-(defn part-schema
-  "Creates a table from coordinates to the number located there"
-  [parts]
+(defn part-schema "Create table from coords to parts" [parts]
   (tabseq [part :in parts                              # for every part
            col :range [(part :column) (part :endcol)]] # and every column it occupies
     {:y col :x (part :line)} part))                    # associate coord with part
