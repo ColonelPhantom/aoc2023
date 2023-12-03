@@ -13,8 +13,8 @@
 
 (defn create-gear [line column] {:line (- line 1) :column (- column 1)})
 (def gear
-  ~{:gear (/ (* (line) (column) "*") ,create-gear)
-    :main (any (* (any (if-not "*" 1)) :gear))})
+  ~{:gear (/ (* (line) (column) "*") ,create-gear) # gear = "*", only location is important
+    :main (any (* (any (if-not "*" 1)) :gear))})   # find all gears
 
 (defn safe-slice
   "Performs slicing safely, by clamping indices to valid (positive) ones."
@@ -25,7 +25,7 @@
 
 (defn has-symbol [part schematic]
   "Checks if the part has a symbol adjacent and is therefore valid"
-  (def symb
+  (def symb # PEG that matches if there is a symbol anywhere in the input
     ~{:SYMB (+ :d ".")              # anything that's not a digit or . is a symbol
       :symb (if-not :SYMB 1)        # everything else is!
       :main (* (any :SYMB) :symb)}) # try to find a symb
