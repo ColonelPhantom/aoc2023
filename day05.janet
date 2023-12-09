@@ -23,8 +23,7 @@
   (def to (+ from len))
   (cond
     (or (<= seedto from) (<= to seedfrom)) [seed] # entirely out of range
-    (and (<<= from seedfrom to) (<= seedto to)) # entirely in range
-    [seed]
+    (and (<<= from seedfrom to) (<= seedto to)) [seed] # entirely in range
     (and (<<= seedfrom from to) (<= seedto to)) # seed extends on left only
     [{:from seedfrom :to from}
      {:from from :to seedto}]
