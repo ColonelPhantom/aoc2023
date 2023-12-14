@@ -1,7 +1,5 @@
 module Day14 (main) where
 import Data.List (transpose, intercalate)
-import qualified Data.Map as M
-import Debug.Trace (traceShow, trace)
 import Data.List.Split (splitOn)
 
 roll :: [Char] -> [Char]
@@ -16,13 +14,15 @@ rollEast = map (reverse . roll . reverse)
 spin :: [String] -> [String]
 spin = rollEast . rollSouth . rollWest . rollNorth
 
-doSpin :: Int -> [String] -> [String]
-doSpin i xs = trace ("spinning " ++ show i ++ " times") $ iterate spin xs !! i -- apply spin i times
+part2 :: Int -> [String] -> [String]
+part2 reps input = spins !! (cycleSize - remainder - 1) where
+    (cycleSize, cycleStart, spins) = findRepeat [] input
+    remainder = (reps - cycleStart) `mod` cycleSize
 
-findSpinCycle :: M.Map [String] Int -> [String] -> (Int, Int, [String])
-findSpinCycle xss xs = trace ("trying to find cycle, " ++ show (M.size xss)) $ case M.lookup xs xss of
-    Just i -> (i, length xss, xs)
-    Nothing -> findSpinCycle (M.insert xs (M.size xss) xss) (spin xs)
+    findRepeat :: [[String]] -> [String] -> (Int, Int, [[String]])
+    findRepeat xss xs = case lookup xs (zip xss [1..]) of
+        Just i -> (i, length xss, xss)
+        Nothing -> findRepeat (xs:xss) (spin xs)
 
 score :: [String] -> Int
 score = sum . zipWith (*) [1..] . reverse . map (length . filter (== 'O'))
@@ -35,8 +35,4 @@ main = do
     print $ score $ rollNorth input
 
     putStr "part 2: "
-    let (cycleTo, cycleStart, mid) = findSpinCycle M.empty input
-    let cycleSize = cycleStart - cycleTo
-    -- let mid = doSpin cycleStart input
-    let remainder = (1000000000 - cycleStart) `mod` cycleSize
-    print $ score $ doSpin remainder mid
+    print $ score $ part2 1000000000 input
