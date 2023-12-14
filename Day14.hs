@@ -1,16 +1,11 @@
 module Day14 (main) where
-import Data.List (transpose)
+import Data.List (transpose, intercalate)
 import qualified Data.Map as M
 import Debug.Trace (traceShow, trace)
-
--- Repeated rolling isn't very efficient, but good enough
-roll1 :: [Char] -> [Char]
-roll1 [] = []
-roll1 ('.':'O':xs) = 'O' : roll1 ('.':xs)
-roll1 (x:xs) = x : roll1 xs
+import Data.List.Split (splitOn)
 
 roll :: [Char] -> [Char]
-roll xs = if roll1 xs == xs then xs else roll (roll1 xs)
+roll = intercalate "#" . map (\xs -> filter (== 'O') xs ++ filter (== '.') xs) . splitOn "#"
 
 rollNorth, rollSouth, rollWest, rollEast :: [String] -> [String]
 rollNorth = transpose . map roll . transpose
