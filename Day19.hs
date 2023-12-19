@@ -56,20 +56,20 @@ score = sum . M.elems
 type Parts = M.Map String [PartRange]
 type PartRange = M.Map String (Int, Int)
 
-symbRule :: Rule -> PartRange -> ([PartRange], Parts)
-symbRule (Always xs) parts = ([], M.singleton xs [parts])
+symbRule :: Rule -> PartRange -> (Maybe PartRange, Parts)
+symbRule (Always xs) parts = (Nothing, M.singleton xs [parts])
 symbRule (If (c :<: i) xs) parts
-    | b < i = ([], M.singleton xs [parts]) -- true for all parts
-    | i < a = ([parts], M.empty) -- false for all parts
-    | a < i && i < b = ([excl], M.singleton xs [incl])-- split down the middle
+    | b < i = (Nothing, M.singleton xs [parts]) -- true for all parts
+    | i < a = (Just parts, M.empty) -- false for all parts
+    | a < i && i < b = (Just excl, M.singleton xs [incl])-- split down the middle
     where
         (a,b) = parts M.! c
         incl = M.insert c (a, i-1) parts
         excl = M.insert c (i, b) parts
 symbRule (If (c :>: i) xs) parts
-    | a > i = ([], M.singleton xs [parts]) -- true for all parts
-    | i > b = ([parts], M.empty) -- false for all parts
-    | a < i && i < b = ([excl], M.singleton xs [incl])-- split down the middle
+    | a > i = (Nothing, M.singleton xs [parts]) -- true for all parts
+    | i > b = (Just parts, M.empty) -- false for all parts
+    | a < i && i < b = (Just excl, M.singleton xs [incl])-- split down the middle
     where
         (a,b) = parts M.! c
         incl = M.insert c (i+1, b) parts
@@ -79,16 +79,15 @@ symbRules :: [Rule] -> PartRange -> Parts
 symbRules [] parts = error "invalid rules"
 symbRules (r:rs) parts = let (remainder, m) = symbRule r parts in
     case remainder of
-        [] -> m
-        ps -> M.unionsWith (++) $ m: map (symbRules rs) ps
+        Nothing -> m
+        Just r -> M.unionWith (++) m (symbRules rs r)
 
 symbFlows :: Flows -> Parts -> ([PartRange], [PartRange])
 symbFlows flows parts = if M.null rest then (a,r) else (a++as, r++rs) where
     (a,r) = (fromMaybe [] (M.lookup "A" parts), fromMaybe [] (M.lookup "R" parts))
     (as, rs) = symbFlows flows remainder
     rest = M.delete "A" $ M.delete "R" parts
-    symbParts id parts = M.unionsWith (++) $ map (symbPart id) parts
-    symbPart id part = symbRules (flows M.! id) part
+    symbParts id parts = M.unionsWith (++) $ map (symbRules (flows M.! id)) parts
     remainder = M.unionsWith (++) $ map (uncurry symbParts) (M.toList rest)
 
 count :: [(Int, Int)] -> Int
@@ -101,10 +100,10 @@ main = do
     [inputr, inputp] <- splitOn [""] . lines <$> getContents
     let flows = M.fromList $ map readFlow inputr
     let parts = map readPart inputp
-    -- print flows
-    -- print parts
+    
+    putStr "part 1: ";
     let accepted = filter (evalFlows flows) parts
-    putStr "part 1: "; print $ sum $ map score accepted
+    print $ sum $ map score accepted
 
     putStr "part 2: "
     let inits = M.singleton "in" [M.fromList $ map (\x -> ([x], (1,4000))) "xmas"]
