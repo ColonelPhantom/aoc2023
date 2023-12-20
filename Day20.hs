@@ -9,6 +9,8 @@ data ModuleT = Broad | FF Bool | Conj (M.Map String PulseT) | Rx Bool deriving S
 type Module = (ModuleT, [String])
 type State = M.Map String Module
 
+rx = "dl"
+
 readMod :: String -> (String, Module)
 readMod xs = case id of
     "broadcaster" -> ("broadcaster", (Broad, tos))
@@ -20,7 +22,7 @@ readMod xs = case id of
         tos = splitOn ", " tos1
 
 readMods :: [String] -> State
-readMods xss = M.insert "rx" (Rx False, []) inited where
+readMods xss = M.insert rx (Rx False, []) inited where
     xs = map readMod xss
     inited = foldr (\(f,t) m -> insertMod m f t) (M.fromList xs) xs
     insertMod :: State -> String -> Module -> State
@@ -68,16 +70,14 @@ pushButtonN n m = let (m',p') = pushButton m
 
 pushButtonRx :: State -> Int
 pushButtonRx s = let (s', _) = pushButton s in
-    case fst $ s' M.! "rx" of
+    case fst $ s' M.! rx of
         (Rx True) -> 1
         (Rx False) -> 1 + pushButtonRx s'
 
 main :: IO ()
 main = do
     input <- readMods . lines <$> getContents
-    print input
     let (_s', ps) = pushButtonN 1000 input
-    -- mapM_ print ps
     let highs = length $ filter (\(x,_,_) -> x == High) ps
     let lows = length $ filter (\(x,_,_) -> x == Low) ps
     print (lows, highs)
