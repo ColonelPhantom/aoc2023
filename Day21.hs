@@ -3,6 +3,9 @@ module Day21 where
 import qualified Data.Set as S
 import qualified Data.Map as M
 import Data.Maybe (catMaybes, fromMaybe)
+import System.IO ( hFlush, stdout )
+import qualified Data.Array as A
+import Data.List (unfoldr)
 
 type Coord = (Int, Int)
 
@@ -30,8 +33,12 @@ succs' m = go where
         valid (x,y) = x < 0 || x >= mx || y < 0 || y >= my || ((m M.! (x,y)) /= '#')
         toGc (x,y) = ((gx + (x `div` mx), gy + (y `div` my)), (x `mod` mx, y `mod` my))
 
-succs2 :: M.Map Coord Char -> GC -> [GC]
-succs2 m = concatMap (succs' m) . succs' m
+step' ::  M.Map Coord Char -> S.Set GC -> S.Set GC
+step' m cs = S.unions $ map (S.fromList . succs' m) $ S.toList cs
+
+
+succs2 :: M.Map Coord Char -> GC -> S.Set GC
+succs2 m = S.fromList . concatMap (succs' m) . succs' m
 
 -- invert :: M.Map a b -> M.Map b a
 invert :: (Ord k, Ord a) => M.Map (S.Set a) k -> M.Map k (S.Set a)
@@ -66,9 +73,20 @@ main = do
     -- print $ succs input s
 
     let is = iterate (step input) (S.singleton s)
-    putStr "part 1: "
+    putStrLn "part 1: "
     putStr "demo: "; print $ length (is !! 6)
     putStr "real: "; print $ length (is !! 64)
+
+    let is = iterate (step' input) (S.singleton ((0,0),s))
+    putStrLn "part 2: "
+    -- mapM_ (\x -> print x >> hFlush stdout) $ zipWith3 (\i x y -> (i, length y - length x)) [1..] is (tail is)
+
+    -- let idelta = zipWith (\x y -> length x - length y) (tail is) is
+    -- let iss = zip [0..] $ zip (1 : take 130 idelta) (take 131 (drop 130 idelta))
+
+    -- print iss
+    mapM_ (\x -> print x >> hFlush stdout) $ zip [0..] (1 : map length is)
+
 
     -- let p2 = iterate (step' input) (M.singleton (S.singleton (0,0)) (S.singleton s))
     -- putStrLn "part 2: "
@@ -84,3 +102,4 @@ main = do
 
 
     -- putStr "part2: "; print $ length (is !! 26501365)
+    putStrLn "goodbye"
