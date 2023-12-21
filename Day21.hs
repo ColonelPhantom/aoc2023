@@ -14,7 +14,6 @@ succs m (x,y) = filter valid [(x-1, y), (x+1, y), (x, y-1), (x,y+1)] where
 step ::  M.Map Coord Char -> S.Set Coord -> S.Set Coord
 step m cs = S.unions $ map (S.fromList . succs m) $ S.toList cs
 
-
 inpToMap :: [[Char]] -> M.Map Coord Char
 inpToMap xs = M.fromList elems where
     elems = catMaybes $ concat $ zipWith linep [0..] xs
@@ -23,33 +22,37 @@ inpToMap xs = M.fromList elems where
 
 -- part 2
 type GC = (Coord, Coord)
-succs' :: M.Map Coord Char -> Coord -> [GC]
+succs' :: M.Map Coord Char -> GC -> [GC]
 succs' m = go where
     mx = 1 + maximum (map fst $ M.keys m)
     my = 1 + maximum (map snd $ M.keys m)
-    go (x,y) = map toGc $ filter valid [(x-1, y), (x+1, y), (x, y-1), (x,y+1)] where
+    go ((gx,gy), (x,y)) = map toGc $ filter valid [(x-1, y), (x+1, y), (x, y-1), (x,y+1)] where
         valid (x,y) = x < 0 || x >= mx || y < 0 || y >= my || ((m M.! (x,y)) /= '#')
-        toGc (x,y) = ((x `div` mx,y `div` my), (x `mod` mx, y `mod` my))
+        toGc (x,y) = ((gx + (x `div` mx), gy + (y `div` my)), (x `mod` mx, y `mod` my))
+
+succs2 :: M.Map Coord Char -> GC -> [GC]
+succs2 m = concatMap (succs' m) . succs' m
 
 -- invert :: M.Map a b -> M.Map b a
+invert :: (Ord k, Ord a) => M.Map (S.Set a) k -> M.Map k (S.Set a)
 invert m = M.fromListWith S.union $ map (\(a,b) -> (b,a)) $ M.toList m
 
 invert2 :: (Ord a, Ord b) => M.Map (S.Set a) (S.Set b) -> M.Map (S.Set a) (S.Set b)
 invert2 = invert . invert
 
 type State = M.Map (S.Set Coord) (S.Set Coord)
-step' :: M.Map Coord Char -> M.Map (S.Set Coord) (S.Set Coord) -> M.Map (S.Set Coord) (S.Set Coord)
-step' m cs = M.unionsWith S.union $ map (M.fromList . filter (not . S.null . snd)) [lsuccs,rsuccs,usuccs,dsuccs] where
-    -- xs = M.unionsWith S.union $ map (M.fromList . filter (not . S.null . snd)) [succs,lsuccs,rsuccs,usuccs,dsuccs]
+-- step' :: M.Map Coord Char -> M.Map (S.Set Coord) (S.Set Coord) -> M.Map (S.Set Coord) (S.Set Coord)
+-- step' m cs = M.unionsWith S.union $ map (M.fromList . filter (not . S.null . snd)) [lsuccs,rsuccs,usuccs,dsuccs] where
+--     -- xs = M.unionsWith S.union $ map (M.fromList . filter (not . S.null . snd)) [succs,lsuccs,rsuccs,usuccs,dsuccs]
 
-    groups = M.fromList $ concatMap (\gcs -> map (, gcs) (S.toList gcs)) $ M.keys succs
+--     groups = M.fromList $ concatMap (\gcs -> map (, gcs) (S.toList gcs)) $ M.keys succs
 
-    foreigns = concatMap (\(g,l) -> map (,l) (S.toList g)) $ concat [lsuccs, rsuccs, usuccs, dsuccs]
-    succs = M.map (S.fromList . concatMap (map snd . filter (\((gx,gy),_) -> gx == 0 && gy == 0) . succs' m) . S.toList) cs
-    lsuccs = map (\(gc, lc) -> (S.map (\(gx,gy) -> (gx-1, gy)) gc, S.fromList $ concatMap (map snd . filter (\((gx,gy),_) -> gx == (-1) && gy == 0) . succs' m) (S.toList lc))) $ M.toList cs
-    rsuccs = map (\(gc, lc) -> (S.map (\(gx,gy) -> (gx+1, gy)) gc, S.fromList $ concatMap (map snd . filter (\((gx,gy),_) -> gx ==   1  && gy == 0) . succs' m) (S.toList lc))) $ M.toList cs
-    usuccs = map (\(gc, lc) -> (S.map (\(gx,gy) -> (gx, gy-1)) gc, S.fromList $ concatMap (map snd . filter (\((gx,gy),_) -> gx == 0 && gy == (-1)) . succs' m) (S.toList lc))) $ M.toList cs
-    dsuccs = map (\(gc, lc) -> (S.map (\(gx,gy) -> (gx, gy+1)) gc, S.fromList $ concatMap (map snd . filter (\((gx,gy),_) -> gx == 0 && gy ==   1 ) . succs' m) (S.toList lc))) $ M.toList cs
+--     foreigns = concatMap (\(g,l) -> map (,l) (S.toList g)) $ concat [lsuccs, rsuccs, usuccs, dsuccs]
+--     succs = M.map (S.fromList . concatMap (map snd . filter (\((gx,gy),_) -> gx == 0 && gy == 0) . succs' m) . S.toList) cs
+--     lsuccs = map (\(gc, lc) -> (S.map (\(gx,gy) -> (gx-1, gy)) gc, S.fromList $ concatMap (map snd . filter (\((gx,gy),_) -> gx == (-1) && gy == 0) . succs' m) (S.toList lc))) $ M.toList cs
+--     rsuccs = map (\(gc, lc) -> (S.map (\(gx,gy) -> (gx+1, gy)) gc, S.fromList $ concatMap (map snd . filter (\((gx,gy),_) -> gx ==   1  && gy == 0) . succs' m) (S.toList lc))) $ M.toList cs
+--     usuccs = map (\(gc, lc) -> (S.map (\(gx,gy) -> (gx, gy-1)) gc, S.fromList $ concatMap (map snd . filter (\((gx,gy),_) -> gx == 0 && gy == (-1)) . succs' m) (S.toList lc))) $ M.toList cs
+--     dsuccs = map (\(gc, lc) -> (S.map (\(gx,gy) -> (gx, gy+1)) gc, S.fromList $ concatMap (map snd . filter (\((gx,gy),_) -> gx == 0 && gy ==   1 ) . succs' m) (S.toList lc))) $ M.toList cs
 
 ssize :: State -> Integer
 ssize m = sum $ map (\(gc,lc) -> fromIntegral (S.size gc * S.size lc)) (M.toList m)
@@ -67,17 +70,17 @@ main = do
     putStr "demo: "; print $ length (is !! 6)
     putStr "real: "; print $ length (is !! 64)
 
-    let p2 = iterate (step' input) (M.singleton (S.singleton (0,0)) (S.singleton s))
-    putStrLn "part 2: "
-    mapM_ print $ M.toList (invert2 $ p2 !! 50)
+    -- let p2 = iterate (step' input) (M.singleton (S.singleton (0,0)) (S.singleton s))
+    -- putStrLn "part 2: "
+    -- mapM_ print $ M.toList (invert2 $ p2 !! 50)
 
-    putStr "6 steps: \t"; print $ ssize (p2 !! 6)
-    putStr "10 steps: \t"; print $ ssize (p2 !! 10)
-    putStr "50 steps: \t"; print $ ssize (p2 !! 50)
-    putStr "100 steps: \t"; print $ ssize (p2 !! 100)
-    putStr "500 steps: \t"; print $ ssize (p2 !! 500)
-    putStr "1000 steps: \t"; print $ ssize (p2 !! 1000)
-    putStr "5000 steps: \t"; print $ ssize (p2 !! 5000)
+    -- putStr "6 steps: \t"; print $ ssize (p2 !! 6)
+    -- putStr "10 steps: \t"; print $ ssize (p2 !! 10)
+    -- putStr "50 steps: \t"; print $ ssize (p2 !! 50)
+    -- putStr "100 steps: \t"; print $ ssize (p2 !! 100)
+    -- putStr "500 steps: \t"; print $ ssize (p2 !! 500)
+    -- putStr "1000 steps: \t"; print $ ssize (p2 !! 1000)
+    -- putStr "5000 steps: \t"; print $ ssize (p2 !! 5000)
 
 
     -- putStr "part2: "; print $ length (is !! 26501365)
