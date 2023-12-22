@@ -4,7 +4,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.List.Split (splitOn)
 import Debug.Trace (traceShow)
-import Data.List (delete, mapAccumL)
+import Data.List (delete, mapAccumL, sortOn)
 
 type Coord = (Int, Int, Int)
 type Brick = (Coord, Coord)
@@ -60,7 +60,7 @@ readBrick xs = let [f,t] = splitOn "~" xs in (readCoord f, readCoord t)
 
 main :: IO ()
 main = do
-    input <- map readBrick . lines <$> getContents
+    input <- sortOn (\(_, (x,y,z)) -> z) . map readBrick . lines <$> getContents
     let (w, bs) = fallConv input
     putStr "part 1: "; print $ length $ filter (canDisintegrate bs w) bs
     putStrLn "part 2: "; print $ sum $ map (canDisintegrateX bs w) bs
