@@ -5,6 +5,7 @@ import qualified Data.Set as S
 import Data.List.Split (splitOn)
 import Debug.Trace (traceShow)
 import Data.List (delete, mapAccumL, sortOn)
+import Control.Parallel.Strategies
 
 type Coord = (Int, Int, Int)
 type Brick = (Coord, Coord)
@@ -37,7 +38,7 @@ initWorld = foldr insertBrick M.empty where
         coords = [(x,y) | x <- [bfx .. btx], y <- [bfy..bty]]
 
 canDisintegrate :: [Brick] -> World -> Brick -> Bool
-canDisintegrate bs w b@((bfx,bfy,bfz), (btx,bty,btz)) = traceShow ("checking", b) fallb == b'
+canDisintegrate bs w b@((bfx,bfy,bfz), (btx,bty,btz)) = fallb == b'
     where
         coords = [(x,y) | x <- [bfx .. btx], y <- [bfy..bty]]
         b' = delete b bs
@@ -45,7 +46,7 @@ canDisintegrate bs w b@((bfx,bfy,bfz), (btx,bty,btz)) = traceShow ("checking", b
         (fallw, fallb) = fallAll w' b'
 
 canDisintegrateX :: [Brick] -> World -> Brick -> Int
-canDisintegrateX bs w b@((bfx,bfy,bfz), (btx,bty,btz)) = traceShow ("diffing", b) (diffs fallb b')
+canDisintegrateX bs w b@((bfx,bfy,bfz), (btx,bty,btz)) = diffs fallb b'
     where
         coords = [(x,y) | x <- [bfx .. btx], y <- [bfy..bty]]
         b' = delete b bs
@@ -63,4 +64,4 @@ main = do
     input <- sortOn (\(_, (x,y,z)) -> z) . map readBrick . lines <$> getContents
     let (w, bs) = fallConv input
     putStr "part 1: "; print $ length $ filter (canDisintegrate bs w) bs
-    putStrLn "part 2: "; print $ sum $ map (canDisintegrateX bs w) bs
+    putStrLn "part 2: "; print $ sum $ parMap rseq (canDisintegrateX bs w) bs
