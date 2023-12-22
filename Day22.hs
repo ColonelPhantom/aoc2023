@@ -6,13 +6,9 @@ import Data.List.Split (splitOn)
 import Debug.Trace (traceShow)
 import Data.List (delete, mapAccumL)
 
-
 type Coord = (Int, Int, Int)
 type Brick = (Coord, Coord)
-
-type VBrick = (Int, Int)
-
-type World = M.Map (Int, Int) (S.Set VBrick)
+type World = M.Map (Int, Int) (S.Set (Int, Int))
 
 fall :: World -> Brick -> (World, Brick)
 fall world ((bfx,bfy,bfz), (btx,bty,btz)) = (newWorld, newBrick) where
@@ -49,15 +45,13 @@ canDisintegrate bs w b@((bfx,bfy,bfz), (btx,bty,btz)) = traceShow ("checking", b
         (fallw, fallb) = fallAll w' b'
 
 canDisintegrateX :: [Brick] -> World -> Brick -> Int
-canDisintegrateX bs w b@((bfx,bfy,bfz), (btx,bty,btz)) = traceShow ("diffing", b)
-    (diffs fallb b')
+canDisintegrateX bs w b@((bfx,bfy,bfz), (btx,bty,btz)) = traceShow ("diffing", b) (diffs fallb b')
     where
         coords = [(x,y) | x <- [bfx .. btx], y <- [bfy..bty]]
         b' = delete b bs
         w' = foldr (M.adjust (S.delete (bfz, btz))) w coords
         (fallw, fallb) = conv (uncurry fallAll) (w', b')
         diffs xs ys = sum $ zipWith (\x y -> if x /= y then 1 else 0) xs ys
-
 
 readCoord :: String -> (Int, Int, Int)
 readCoord xs = read ("(" ++ xs ++ ")")
